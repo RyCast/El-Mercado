@@ -1,0 +1,182 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercado de Tiendas - Strip Mall Directory</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f1e9;
+            color: #333;
+        }
+        header {
+            background-color: #d90429;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .store-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .store-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        .store-card:hover {
+            transform: translateY(-5px);
+        }
+        .store-card h2 {
+            margin: 0 0 0.5rem;
+            color: #2a623d;
+            font-size: 1.5rem;
+        }
+        .store-card p {
+            margin: 0.5rem 0;
+            color: #555;
+        }
+        .search-bar {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .search-bar input {
+            padding: 0.75rem;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        footer {
+            background-color: #2a623d;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            .store-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mercado de Tiendas</h1>
+        <p>Your guide to the strip mall marketplace in Mexico</p>
+    </header>
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search for a store..." onkeyup="searchStores()">
+        </div>
+        <div class="store-list" id="storeList">
+            <!-- Store data will be populated here -->
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2025 Mercado de Tiendas. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const stores = [
+            { name: "Café de la Plaza", category: "Café", description: "Cozy coffee shop with authentic Mexican brews." },
+            { name: "Tienda de Artesanías", category: "Crafts", description: "Handmade Mexican crafts and souvenirs." },
+            { name: "Tacos El Sabor", category: "Food", description: "Delicious tacos and traditional Mexican street food." },
+            { name: "Librería Cultural", category: "Books", description: "Books and magazines celebrating Mexican culture." },
+            { name: "Boutique Moda", category: "Clothing", description: "Trendy clothing inspired by Mexican designs." },
+            { name: "Farmacia Salud", category: "Pharmacy", description: "Health and wellness products for all your needs." }
+        ];
+
+        function displayStores(storesToShow) {
+            const storeList = document.getElementById('storeList');
+            storeList.innerHTML = '';
+            storesToShow.forEach(store => {
+                const storeCard = document.createElement('div');
+                storeCard.className = 'store-card';
+                storeCard.innerHTML = `
+                    <h2>${store.name}</h2>
+                    <p><strong>Category:</strong> ${store.category}</p>
+                    <p>${store.description}</p>
+                `;
+                storeList.appendChild(storeCard);
+            });
+        }
+
+        function searchStores() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const filteredStores = stores.filter(store =>
+                store.name.toLowerCase().includes(searchInput) ||
+                store.category.toLowerCase().includes(searchInput) ||
+                store.description.toLowerCase().includes(searchInput)
+            );
+            displayStores(filteredStores);
+        }
+
+        // Initial display of all stores
+        displayStores(stores);
+    </script>
+</body>
+</html>
